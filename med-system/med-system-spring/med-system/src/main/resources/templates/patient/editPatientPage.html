@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit table</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<h2 class="title">Edit patient list</h2>
+<h2 th:text="${errorMessage}" class="error-message">
+</h2>
+<form th:action="@{/patient/save/{id} (id=${patient.getId()})}" th:object="${patient}" method="POST">
+<!--  <input name="patient_id" th:field="*{id}" required hidden/>-->
+  <div class="add-item"><label>Surname</label>
+    <input required placeholder="Ivanov" type="text" name="surname" th:field="*{surname}"
+           pattern="^[A-Z][a-z]+|[А-ЯЄІЇ][а-яієї]+$"/>
+  </div>
+  <div class="add-item">
+    <label>Name</label>
+    <input required placeholder="Ivan" type="text" name="name" th:field="*{name}"
+           pattern="^[A-Z][a-z]+|[А-ЯЄІЇ][а-яієї]+$"/>
+  </div>
+  <div class="add-item"><label>Middle name</label>
+    <input required placeholder="Ivanovich" type="text" name="midname" th:field="*{midName}"
+           pattern="^[A-Z][a-z]+|[А-ЯЄІЇ][а-яієї]+$"/>
+  </div>
+
+  <div class="add-item"><label>Birthday</label>
+    <input required type="date" name="birthday" th:field="*{birthday}"/>
+  </div>
+
+  <div class="add-item">
+    <label for="gender">Gender</label>
+
+    <select id="gender" name="gender" th:field="*{gender}" required>
+      <option th:value="true" th:text="male" th:selected="${patient.gender}"></option>
+      <option th:value="false" th:text="female" th:selected="${!patient.gender}"></option>
+    </select>
+    </div>
+  </div>
+
+  <div class="add-item"><label>State Comment</label>
+    <textarea placeholder="Consultation" required type="text" name="state" th:field="*{stateComments}">
+    </textarea>
+  </div>
+  <div>
+    <input type="submit" value="Submit"/>
+  </div>
+</form>
+<a style="margin-left: 0" href="/patients">Return to the patient list</a>
+
+</body>
+</html>

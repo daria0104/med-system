@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <title>Visits</title>
+    <script src="https://momentjs.com/downloads/moment.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <link rel="stylesheet" href="/style.css">
+
+</head>
+<body>
+<div class="wrapper">
+<div class="nav-bar">
+    <h2 ><span class="title" th:utext="${patient.surname + ' ' + patient.name + message}"></span></h2>
+    <div>
+        <a class="nav-link active text-primary" aria-current="page" th:href="@{/logout}">Log out</a>
+        <a class="nav-link active text-primary" aria-current="page" th:href="@{/patients}">Return to the patient list</a>
+    </div>
+</div>
+
+<div>
+    <form th:action="@{/patient/{patient_id}/visits/report (patient_id=${patient.id})}" method="GET">
+        <div class="report">
+            <select  class="filter" name="format">
+                <option value="html">HTML</option>
+                <option value="txt">TXT</option>
+            </select>
+
+        <button type="submit">Download the report</button>
+        </div>
+    </form>
+
+    <form id="send-email-form" th:action="@{/patient/{patient_id}/visits/sendMail(patient_id=${patient.id})}" method="POST">
+        <div class="report">
+            <select  class="filter" name="format">
+                <option value="html">HTML</option>
+                <option value="txt">TXT</option>
+            </select>
+            <input type="email" id="recipient" name="recipient" placeholder="user@gmail.com" required/>
+        <button id="send-button" onclick="submitForm(30)" type="submit">Send the report</button>
+        </div>
+    </form>
+    <h3 id="after-sent-message"></h3>
+</div>
+
+<div class="block">
+    <div>
+        <label>Sort by visit time</label>
+        <button onclick="sortByVisitTime(true)" accesskey="q">&#8593</button>
+        <button onclick="sortByVisitTime(false)" accesskey="w">&#8595</button>
+        <br>
+        <!--        </div>-->
+        <div class="inline-div">
+            <label>Filter</label>
+            <select id="doctor_filter"  name="doctor_filter" onchange="filterByDoctors()">
+                <option value="all">All</option>
+                <option th:each="doctor : ${doctorCodeList}"
+                        th:value="${doctor}" th:text="${doctor}"></option>
+            </select>
+        </div>
+    </div>
+
+    <div class="flex-block">
+        <input type="text" placeholder="Find by service..." id="search-text" onkeyup="tableSearch()">
+        <div>
+            <form th:action="@{/patient/{patient_id}/visit/new (patient_id=${patient.id})}" method="get"
+                  th:if="${#authorization.expression('hasAuthority(''ADMIN'')')}">
+                <input type="hidden" name="patient_id" value="0"/>
+                <button accesskey="a">Add</button>
+            </form>
+            <form th:action="@{/patient/{id}/visits (id=${patient.id})}" method="get">
+                <button accesskey="r">Reset</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<table id="visits-table" cellpadding="5">
+    <tr>
+        <th>Visit code</th>
+        <th>Doctor code</th>
+        <th>Service</th>
+        <th>Visit time</th>
+        <th>Price</th>
+        <th align="left">Paid</th>
+        <th colspan="2" style="text-align: center" th:if="${#authorization.expression('hasAuthority(''ADMIN'')')}">Actions</th>
+    </tr>
+        <tr th:each="v: ${visits}">
+            <td th:text="${v.visitCode}"></td>
+            <td th:text="${v.doctorCode}"></td>
+            <td th:text="${v.service}"></td>
+            <td th:text="${v.getStringTimeVisit()}"></td>
+            <td th:text="${v.cost}"></td>
+            <td th:text="${v.payment}"></td>
+            <td class="actions-item" th:if="${#authorization.expression('hasAuthority(''ADMIN'')')}">
+                <form th:action="@{/patient/{patient_id}/visit/edit/{visit_id} (patient_id=${patient.id}, visit_id=${v.visit_id})}">
+                    <input type="submit" value="Edit">
+                </form>
+            </td>
+            <td class="actions-item" th:if="${#authorization.expression('hasAuthority(''ADMIN'')')}">
+                <form th:action="@{/patient/{patient_id}/visit/delete/{visit_id} (patient_id=${patient.id}, visit_id=${v.visit_id})}">
+                    <!--          <input type="hidden" name="id" value="${p.id}">-->
+                    <input type="submit" value="Delete" onclick="return confirmation()">
+                </form>
+            </td>
+        </tr>
+
+</table>
+</div>
+<script>
+    function confirmation() {
+        return confirm('Are you sure you want to delete?');
+    }
+
+    // window.addEventListener("load", (event) => {
+    //     let table = document.getElementById('visits-table');
+    //     console.log(table);
+    //     let rows = table.rows;
+    //     if(rows.length === 1){
+    //         table.style.display = "none";
+    //     }
+    // });
+
+    function sortByVisitTime(increased) {
+        console.log("entered to sortByVisitTime");
+        let table = document.getElementById('visits-table');
+        let swap = true;
+        let condition = true;
+        let rows = table.rows;
+
+        while (swap) {
+            swap = false;
+            let i;
+            for (i = 1; i < rows.length - 1; i++) {
+                let item1 = moment(rows[i].getElementsByTagName('td')[3].textContent, "dd.MM.yyyy HH:mm");
+                let item2 = moment(rows[i+1].getElementsByTagName('td')[3].textContent, "dd.MM.yyyy HH:mm");
+
+                condition = (increased ? item1.isAfter(item2) : item1.isBefore(item2));
+                if (condition) {
+                    swap = true;
+                    break;
+                }
+            }
+            if (swap) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            }
+        }
+    }
+
+    function tableSearch() {
+        let phrase = document.getElementById('search-text');
+        let table = document.getElementById('visits-table');
+        let regPhrase = new RegExp(phrase.value, 'i');
+        let flag = false;
+        for (let i = 1; i < table.rows.length; i++) {
+            flag = regPhrase.test(table.rows[i].cells[2].innerHTML);
+            if (flag) {
+                table.rows[i].style.display = "";
+            } else {
+                table.rows[i].style.display = "none";
+            }
+        }
+    }
+
+    function filterByDoctors() {
+        let doctorSelect = document.getElementById('doctor_filter').selectedIndex;
+        let doctorOptions = document.getElementById('doctor_filter').options;
+        if (doctorOptions[doctorSelect].text != "All") {
+            let table = document.getElementById('visits-table');
+            for (let i = 1; i < table.rows.length; i++) {
+                if (doctorOptions[doctorSelect].text === table.rows[i].cells[1].innerHTML) {
+                    table.rows[i].style.display = "";
+                } else {
+                    table.rows[i].style.display = "none";
+                }
+            }
+        } else {
+            let table = document.getElementById('visits-table');
+            for (let i = 1; i < table.rows.length; i++) {
+                table.rows[i].style.display = "";
+            }
+        }
+    }
+
+    function submitForm(seconds) {
+        let button = $("#send-button");
+        button.prop("disabled", true);
+
+        let form = $("#send-email-form");
+
+        $.ajax({
+            type: form.attr('method'),
+            url: form.attr('action'),
+            data: form.serialize(),
+            success: function (response) {
+                let after_sent = $("#after-sent-message");
+                after_sent.text("If you haven’t received the email, resend in " + seconds + " seconds");
+
+                let intervalId = setInterval(function () {
+                    seconds--;
+                    after_sent.text("If you haven’t received the email, resend in " + seconds + " seconds");
+                    if (seconds === 0) {
+                        clearInterval(intervalId);
+                        after_sent.text("");
+                        button.prop("disabled", false);
+                    }
+                }, 1000);
+
+                console.log(response);
+            },
+            error: function (error) {
+                console.log(error);
+            }
+        });
+    }
+</script>
+</body>
+</html>

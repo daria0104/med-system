@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Error</title>
+    <link rel="stylesheet" href="/style.css">
+  <style>
+    h2{
+        margin: 150px 0 20px 100px;
+        width: 60%;
+    }
+    a{ margin-left: 100px}
+  </style>
+</head>
+<body>
+  <h2 th:text="${errorMessage}" id="error-message"></h2>
+  <a href="/patients">Return to the patient list</a>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <title>Start page</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<h2 class="title" sec:authorize="isAuthenticated()">User
+    <span class="title" style="display: inline-block; margin: 0" sec:authentication="name"></span>
+</h2>
+<a href="/patients">Show patients</a><br>
+<a th:href="@{/register}" th:if="${#authorization.expression('hasAuthority(''ADMIN'')')}">Add new user</a><br>
+<a class="nav-link active text-primary" aria-current="page" th:href="@{/logout}">Log out</a>
+
+</body>
+</html>

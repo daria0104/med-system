@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit table</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<h2 class="title">Edit visit list</h2>
+
+<h2 th:text="${errorMessage}" id="error-message">
+</h2>
+<form th:action="@{/patient/{patient_id}/visit/save/{visit_id} (patient_id=${patient.id}, visit_id=${visit.visit_id})}"
+      th:object="${visit}" method="POST">
+    <input name="visit_id" th:field="*{visit_id}" required hidden/>
+    <div class="add-item">
+        <label>Doctor code</label>
+        <input required placeholder="xxxx" type="text" name="doctorCode" th:field="*{doctorCode}" maxlength="4"/>
+    </div>
+    <div class="add-item">
+        <label>Service</label>
+
+        <select id="service" name="service" th:field="*{service}" required onchange="updatePrice()">
+<!--            <option value="Choose">Choose</option>-->
+            <option value="" disabled="disabled" selected="selected">Select service</option>
+            <option th:each="service: ${T(com.example.extra.Utils).servicesMap().values()}"
+                    th:value="${service}" th:text="${service}"></option>
+        </select>
+    </div>
+    <div class="add-item">
+        <label>Visit time</label>
+        <input required type="datetime-local" name="visitTime" th:field="*{timeVisit}"/>
+    </div>
+    <div class="add-item">
+        <label>Price</label>
+        <input required type="text" name="price" th:field="*{cost}" id="price"/>
+    </div>
+    <div class="add-item">
+        <label>Paid</label>
+        <input required type="text" name="paid" th:field="*{payment}" id="payment"/>
+    </div>
+    <div>
+        <input type="submit" value="Submit" onclick="return checkFields()"/>
+    </div>
+</form>
+<a class="return-link" href="/patients">Return to the patient list</a>
+<a class="return-link" th:href="@{/patient/{id}/visits (id=${patient.id})}">Return to the visits list</a>
+
+<script th:inline="javascript">
+
+    function checkFields() {
+        // let service = document.getElementById('service');
+        // let selectedService = service.options[service.selectedIndex].text;
+        // if (selectedService === 'Choose') {
+        //     document.getElementById('error-message').textContent = "Please, choose the service or return to the main page.";
+        //     return false;
+        // }
+
+        let payment = document.getElementById('payment').value;
+        let price = +document.getElementById('price').value;
+
+        console.log("1", (price * 0.3) > payment);
+        console.log("2", payment > price);
+        if ((price * 0.3) > payment || payment > price) {
+            document.getElementById('error-message').textContent = "Payment cannot be less than 30% of the price and not more";
+            return false;
+        }
+    }
+
+    function getKeyByValue(object, value) {
+        return Object.keys(object).find(key => object[key] === value);
+    }
+
+    function updatePrice() {
+        let serviceDropdown = document.getElementById('service');
+        let priceInput = document.getElementById('price');
+        let selectedService = serviceDropdown.options[serviceDropdown.selectedIndex].text;
+        let servicesMap = [[${T(com.example.extra.Utils).servicesMap()}]];
+
+        if (selectedService === "Choose")
+            priceInput.value = 0.0;
+
+        else
+            priceInput.value = getKeyByValue(servicesMap, selectedService);
+    }
+</script>
+
+</body>
+</html>
